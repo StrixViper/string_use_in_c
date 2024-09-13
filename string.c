@@ -22,6 +22,7 @@ typedef struct {
     size_t operations;
 } PerformanceTracker;
 
+
 // Function prototypes
 String create_string(const char *initial_data);
 void free_string(String *str);
@@ -51,6 +52,80 @@ PerformanceTracker create_performance_tracker();
 void track_memory_usage(PerformanceTracker *tracker, size_t bytes);
 void track_operation(PerformanceTracker *tracker);
 void print_performance(const PerformanceTracker *tracker);
+
+// String compression and decompression
+String compress_string(const String *str);
+String decompress_string(const String *str);
+
+// String encryption and decryption
+String encrypt_string(const String *str, int shift);
+String decrypt_string(const String *str, int shift);
+
+// String splitting
+String* split_string(const String *str, char delimiter, size_t *count);
+
+// Search and replace
+size_t search_substring(const String *str, const String *substr);
+String replace_substring(const String *str, const String *target, const String *replacement);
+
+// String formatting
+String format_string(const char *format, ...);
+
+// String to integer and char array conversions
+int string_to_int(const String *str);
+char* string_to_char_array(const String *str);
+String char_array_to_string(const char *char_array);
+
+// String padding
+String pad_left(const String *str, size_t total_length, char pad_char);
+String pad_right(const String *str, size_t total_length, char pad_char);
+
+// Uppercase and lowercase conversion
+String to_uppercase(const String *str);
+String to_lowercase(const String *str);
+
+
+// Function to join an array of Strings into a single String with a delimiter
+String join_strings(const String *strings, size_t count, char delimiter);
+
+// Function to tokenize a string by a delimiter, returns an array of Strings
+String* tokenize_string(const String *str, char delimiter, size_t *count);
+
+
+int main() {
+    // Example usage of string functions
+    String str1 = create_string("Hello");
+    String str2 = create_string(" World!");
+    
+    String concatenated = concatenate_strings(&str1, &str2);
+    print_string(&concatenated);
+
+    String upper_str = to_upper_case(&concatenated);
+    print_string(&upper_str);
+
+    String trimmed_str = trim_string(&concatenated);
+    print_string(&trimmed_str);
+
+    free_string(&str1);
+    free_string(&str2);
+    free_string(&concatenated);
+    free_string(&upper_str);
+    free_string(&trimmed_str);
+
+    // Example usage of StringList
+    StringList list = create_string_list();
+    add_string_to_list(&list, &str1);
+    add_string_to_list(&list, &str2);
+
+    print_string_list(&list);
+    free_string_list(&list);
+
+    return 0;
+}
+
+
+
+
 
 // Function to create a new String
 String create_string(const char *initial_data) {
@@ -450,34 +525,134 @@ String format_string(const char *format, ...) {
     return create_string(buffer); // Return formatted string
 }
 
+// Function to convert a string to an integer (basic atoi implementation)
+int string_to_int(const String *str) {
+    return atoi(str->data); // Uses standard library function to convert string to integer
+}
 
-int main() {
-    // Example usage of string functions
-    String str1 = create_string("Hello");
-    String str2 = create_string(" World!");
+// Function to return an array of chars from a String
+char* string_to_char_array(const String *str) {
+    char *char_array = (char *)malloc(str->length + 1);
+    if (char_array) {
+        strcpy(char_array, str->data); // Copy the string data to the array
+    }
+    return char_array;
+}
+
+// Function to convert a character array into a String
+String char_array_to_string(const char *char_array) {
+    return create_string(char_array); // Uses the existing create_string function
+}
+
+// Function to pad a string on the left to a specific length with a character
+String pad_left(const String *str, size_t total_length, char pad_char) {
+    if (str->length >= total_length) {
+        return create_string(str->data); // No padding needed
+    }
     
-    String concatenated = concatenate_strings(&str1, &str2);
-    print_string(&concatenated);
+    String result;
+    result.length = total_length;
+    result.data = (char *)malloc(total_length + 1); // Allocate new memory
+    if (result.data) {
+        size_t pad_size = total_length - str->length;
+        memset(result.data, pad_char, pad_size); // Fill with padding characters
+        strcpy(result.data + pad_size, str->data); // Copy original string
+    }
+    return result;
+}
 
-    String upper_str = to_upper_case(&concatenated);
-    print_string(&upper_str);
+// Function to pad a string on the right
+String pad_right(const String *str, size_t total_length, char pad_char) {
+    if (str->length >= total_length) {
+        return create_string(str->data); // No padding needed
+    }
 
-    String trimmed_str = trim_string(&concatenated);
-    print_string(&trimmed_str);
+    String result;
+    result.length = total_length;
+    result.data = (char *)malloc(total_length + 1);
+    if (result.data) {
+        strcpy(result.data, str->data); // Copy original string
+        memset(result.data + str->length, pad_char, total_length - str->length); // Fill with padding characters
+        result.data[total_length] = '\0';
+    }
+    return result;
+}
 
-    free_string(&str1);
-    free_string(&str2);
-    free_string(&concatenated);
-    free_string(&upper_str);
-    free_string(&trimmed_str);
 
-    // Example usage of StringList
-    StringList list = create_string_list();
-    add_string_to_list(&list, &str1);
-    add_string_to_list(&list, &str2);
+// Function to convert a string to uppercase
+String to_uppercase(const String *str) {
+    String result;
+    result.length = str->length;
+    result.data = (char *)malloc(result.length + 1);
+    if (result.data) {
+        for (size_t i = 0; i < str->length; i++) {
+            result.data[i] = toupper(str->data[i]);
+        }
+        result.data[str->length] = '\0';
+    }
+    return result;
+}
 
-    print_string_list(&list);
-    free_string_list(&list);
+// Function to convert a string to lowercase
+String to_lowercase(const String *str) {
+    String result;
+    result.length = str->length;
+    result.data = (char *)malloc(result.length + 1);
+    if (result.data) {
+        for (size_t i = 0; i < str->length; i++) {
+            result.data[i] = tolower(str->data[i]);
+        }
+        result.data[str->length] = '\0';
+    }
+    return result;
+}
+// Function to join an array of strings with a delimiter
+String join_strings(const String *str_array, size_t array_size, const char *delimiter) {
+    if (array_size == 0) return create_string(""); // Empty array
+    
+    size_t delimiter_length = strlen(delimiter);
+    size_t total_length = 0;
+    
+    // Calculate the total length needed for the resulting string
+    for (size_t i = 0; i < array_size; i++) {
+        total_length += str_array[i].length;
+        if (i < array_size - 1) {
+            total_length += delimiter_length;
+        }
+    }
+    
+    String result;
+    result.length = total_length;
+    result.data = (char *)malloc(result.length + 1);
+    
+    if (result.data) {
+        result.data[0] = '\0'; // Start with an empty string
+        for (size_t i = 0; i < array_size; i++) {
+            strcat(result.data, str_array[i].data); // Append the next string
+            if (i < array_size - 1) {
+                strcat(result.data, delimiter); // Append delimiter if it's not the last string
+            }
+        }
+    }
+    return result;
+}
 
-    return 0;
+// Function to split a string by a delimiter into an array of strings
+String* split_string(const String *str, const char *delimiter, size_t *count) {
+    size_t tokens_count = 0;
+    char *copy = strdup(str->data); // Make a copy of the original string to tokenize
+    char *token = strtok(copy, delimiter);
+    
+    String *tokens = NULL;
+    while (token) {
+        tokens = (String *)realloc(tokens, sizeof(String) * (tokens_count + 1));
+        tokens[tokens_count] = create_string(token);
+        tokens_count++;
+        token = strtok(NULL, delimiter);
+    }
+    
+    *count = tokens_count; // Update count
+    free(copy); // Free the temporary copy
+    
+    return tokens;
 }
