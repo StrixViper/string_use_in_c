@@ -1,12 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 // Define a struct to represent a string with its length
 typedef struct {
     char *data;
     size_t length;
 } String;
+
+// Define a struct to represent a list of Strings
+typedef struct {
+    String *strings;
+    size_t size;
+    size_t capacity;
+} StringList;
+
+// Define a struct to track performance
+typedef struct {
+    size_t memory_used;
+    size_t operations;
+} PerformanceTracker;
 
 // Function prototypes
 String create_string(const char *initial_data);
@@ -21,6 +35,22 @@ String replace_substring(const String *str, const char *old_sub, const char *new
 String trim_string(const String *str);
 String copy_string(const String *str);
 String reverse_string(const String *str);
+String to_upper_case(const String *str);
+String to_lower_case(const String *str);
+String capitalize(const String *str);
+
+// StringList operations
+StringList create_string_list();
+void add_string_to_list(StringList *list, const String *str);
+void remove_string_from_list(StringList *list, size_t index);
+void print_string_list(const StringList *list);
+void free_string_list(StringList *list);
+
+// Performance tracking
+PerformanceTracker create_performance_tracker();
+void track_memory_usage(PerformanceTracker *tracker, size_t bytes);
+void track_operation(PerformanceTracker *tracker);
+void print_performance(const PerformanceTracker *tracker);
 
 // Function to create a new String
 String create_string(const char *initial_data) {
@@ -150,74 +180,147 @@ String trim_string(const String *str) {
     return substring(str, start, end - start + 1);
 }
 
-// Function to copy a string
-String copy_string(const String *str) {
+// Function to convert a string to upper case
+String to_upper_case(const String *str) {
     if (!str) return create_string("");
-    return create_string(str->data);
+    
+    String upper = create_string(str->data);
+    for (size_t i = 0; i < upper.length; i++) {
+        upper.data[i] = toupper(upper.data[i]);
+    }
+    return upper;
 }
 
-// Function to reverse a string
-String reverse_string(const String *str) {
+// Function to convert a string to lower case
+String to_lower_case(const String *str) {
     if (!str) return create_string("");
 
-    String reversed = create_string("");
-    reversed.data = (char *)malloc(str->length + 1);
-    if (!reversed.data) {
+    String lower = create_string(str->data);
+    for (size_t i = 0; i < lower.length; i++) {
+        lower.data[i] = tolower(lower.data[i]);
+    }
+    return lower;
+}
+
+// Function to capitalize a string (first letter uppercase, rest lowercase)
+String capitalize(const String *str) {
+    if (!str) return create_string("");
+
+    String capitalized = to_lower_case(str);
+    if (capitalized.length > 0) {
+        capitalized.data[0] = toupper(capitalized.data[0]);
+    }
+    return capitalized;
+}
+
+// StringList Operations
+
+// Function to create an empty StringList
+StringList create_string_list() {
+    StringList list;
+    list.size = 0;
+    list.capacity = 4; // Initial capacity
+    list.strings = (String *)malloc(list.capacity * sizeof(String));
+    if (!list.strings) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
-
-    for (size_t i = 0; i < str->length; i++) {
-        reversed.data[i] = str->data[str->length - 1 - i];
-    }
-    reversed.data[str->length] = '\0';
-    reversed.length = str->length;
-
-    return reversed;
+    return list;
 }
 
-// Main function to demonstrate usage
+// Function to add a String to a StringList
+void add_string_to_list(StringList *list, const String *str) {
+    if (list->size == list->capacity) {
+        list->capacity *= 2; // Double the capacity
+        list->strings = (String *)realloc(list->strings, list->capacity * sizeof(String));
+        if (!list->strings) {
+            fprintf(stderr, "Memory allocation failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    list->strings[list->size] = copy_string(str);
+    list->size++;
+}
+
+// Function to remove a String from a StringList by index
+void remove_string_from_list(StringList *list, size_t index) {
+    if (index >= list->size) {
+        fprintf(stderr, "Index out of bounds\n");
+        return;
+    }
+    free_string(&list->strings[index]);
+    for (size_t i = index; i < list->size - 1; i++) {
+        list->strings[i] = list->strings[i + 1];
+    }
+    list->size--;
+}
+
+// Function to print all Strings in a StringList
+void print_string_list(const StringList *list) {
+    for (size_t i = 0; i < list->size; i++) {
+        print_string(&list->strings[i]);
+    }
+}
+
+// Function to free a StringList and its contents
+void free_string_list(StringList *list) {
+    for (size_t i = 0; i < list->size; i++) {
+        free_string(&list->strings[i]);
+    }
+    free(list->strings);
+}
+
+// Performance tracking
+
+// Function to create a performance tracker
+PerformanceTracker create_performance_tracker() {
+    PerformanceTracker tracker = {0, 0};
+    return tracker;
+}
+
+// Function to track memory usage
+void track_memory_usage(PerformanceTracker *tracker, size_t bytes) {
+    tracker->memory_used += bytes;
+}
+
+// Function to track an operation
+void track_operation(PerformanceTracker *tracker) {
+    tracker->operations++;
+}
+
+// Function to print the performance statistics
+void print_performance(const PerformanceTracker *tracker) {
+    printf("Memory used: %zu bytes\n", tracker->memory_used);
+    printf("Operations: %zu\n", tracker->operations);
+}
+
 int main() {
-    // Create two Strings
-    String str1 = create_string("Hello, ");
-    String str2 = create_string("World!");
-
-    // Print the Strings
-    print_string(&str1);
-    print_string(&str2);
-
-    // Concatenate the Strings
+    // Example usage of string functions
+    String str1 = create_string("Hello");
+    String str2 = create_string(" World!");
+    
     String concatenated = concatenate_strings(&str1, &str2);
     print_string(&concatenated);
 
-    // Compare the Strings
-    int comparison = compare_strings(&str1, &str2);
-    printf("Comparison result: %d\n", comparison);
+    String upper_str = to_upper_case(&concatenated);
+    print_string(&upper_str);
 
-    // Substring example
-    String sub = substring(&concatenated, 7, 5);
-    print_string(&sub);
+    String trimmed_str = trim_string(&concatenated);
+    print_string(&trimmed_str);
 
-    // Replace substring example
-    String replaced = replace_substring(&concatenated, "World", "Everyone");
-    print_string(&replaced);
-
-    // Trim string example
-    String trimmed = trim_string(&replaced);
-    print_string(&trimmed);
-
-    // Reverse string example
-    String reversed = reverse_string(&trimmed);
-    print_string(&reversed);
-
-    // Free the allocated memory
     free_string(&str1);
     free_string(&str2);
     free_string(&concatenated);
-    free_string(&sub);
-    free_string(&replaced);
-    free_string(&trimmed);
-    free_string(&reversed);
+    free_string(&upper_str);
+    free_string(&trimmed_str);
+
+    // Example usage of StringList
+    StringList list = create_string_list();
+    add_string_to_list(&list, &str1);
+    add_string_to_list(&list, &str2);
+
+    print_string_list(&list);
+    free_string_list(&list);
 
     return 0;
 }
