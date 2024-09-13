@@ -1,3 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Define a struct to hold a string and its length
+typedef struct {
+    char *data;
+    size_t length;
+} String;
+
+// Function to create a new String
+String create_string(const char *initial_data) {
+    String str;
+    str.length = strlen(initial_data);
+    str.data = (char *)malloc(str.length + 1); // +1 for the null terminator
+    if (str.data) {
+        strcpy(str.data, initial_data);
+    }
+    return str;
+}
 
 // Function to get the length of a String
 size_t get_string_length(const String *str) {
@@ -60,5 +80,5 @@ int main() {
     free_string(&str2);
     free_string(&concatenated);
 
-    return 0;
+    return 0;
 }
