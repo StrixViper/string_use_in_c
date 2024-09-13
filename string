@@ -1,0 +1,64 @@
+
+// Function to get the length of a String
+size_t get_string_length(const String *str) {
+    return str->length;
+}
+
+// Function to concatenate two Strings
+String concatenate_strings(const String *str1, const String *str2) {
+    String result;
+    result.length = str1->length + str2->length;
+    result.data = (char *)malloc(result.length + 1); // +1 for the null terminator
+    if (result.data) {
+        strcpy(result.data, str1->data);
+        strcat(result.data, str2->data);
+    }
+    return result;
+}
+
+// Function to compare two Strings
+int compare_strings(const String *str1, const String *str2) {
+    return strcmp(str1->data, str2->data);
+}
+
+// Function to print a String
+void print_string(const String *str) {
+    if (str->data) {
+        printf("The string is: %s\n", str->data);
+    }
+}
+
+// Function to free the memory allocated for a String
+void free_string(String *str) {
+    if (str->data) {
+        free(str->data);
+        str->data = NULL;
+        str->length = 0;
+    }
+}
+
+// Main function to demonstrate usage
+int main() {
+    // Create two Strings
+    String str1 = create_string("Hello, ");
+    String str2 = create_string("World!");
+
+    // Print the Strings
+    print_string(&str1);
+    print_string(&str2);
+
+    // Concatenate the Strings
+    String concatenated = concatenate_strings(&str1, &str2);
+    print_string(&concatenated);
+
+    // Compare the Strings
+    int comparison = compare_strings(&str1, &str2);
+    printf("Comparison result: %d\n", comparison);
+
+    // Free the allocated memory
+    free_string(&str1);
+    free_string(&str2);
+    free_string(&concatenated);
+
+    return 0;
+}
