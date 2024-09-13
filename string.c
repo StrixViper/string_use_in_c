@@ -294,6 +294,163 @@ void print_performance(const PerformanceTracker *tracker) {
     printf("Operations: %zu\n", tracker->operations);
 }
 
+
+// Function to compress a string using run-length encoding
+String compress_string(const String *str) {
+    if (str->length == 0) return create_string(""); // Handle empty string
+    
+    char *compressed = (char *)malloc((2 * str->length) + 1); // Max size if no compression occurs
+    size_t index = 0, count;
+    
+    for (size_t i = 0; i < str->length; i++) {
+        compressed[index++] = str->data[i];
+        count = 1;
+        
+        while (i + 1 < str->length && str->data[i] == str->data[i + 1]) {
+            count++;
+            i++;
+        }
+        index += sprintf(compressed + index, "%zu", count); // Append count after character
+    }
+    compressed[index] = '\0'; // Null-terminate compressed string
+    String result = {compressed, index};
+    return result;
+}
+
+// Function to decompress a run-length encoded string
+String decompress_string(const String *str) {
+    char *decompressed = (char *)malloc((str->length * 2) + 1); // Assume worst case expansion
+    size_t index = 0;
+    
+    for (size_t i = 0; i < str->length; i++) {
+        char ch = str->data[i];
+        i++;
+        
+        size_t count = 0;
+        while (i < str->length && isdigit(str->data[i])) {
+            count = count * 10 + (str->data[i] - '0');
+            i++;
+        }
+        i--; // Adjust since loop over-iterates
+        
+        for (size_t j = 0; j < count; j++) {
+            decompressed[index++] = ch;
+        }
+    }
+    decompressed[index] = '\0'; // Null-terminate decompressed string
+    String result = {decompressed, index};
+    return result;
+}
+
+// Simple Caesar Cipher encryption with a shift key
+String encrypt_string(const String *str, int shift) {
+    String encrypted;
+    encrypted.length = str->length;
+    encrypted.data = (char *)malloc(encrypted.length + 1);
+    
+    for (size_t i = 0; i < str->length; i++) {
+        if (isalpha(str->data[i])) {
+            char offset = isupper(str->data[i]) ? 'A' : 'a';
+            encrypted.data[i] = ((str->data[i] - offset + shift) % 26) + offset;
+        } else {
+            encrypted.data[i] = str->data[i]; // Non-alphabet characters remain unchanged
+        }
+    }
+    encrypted.data[encrypted.length] = '\0'; // Null-terminate the encrypted string
+    return encrypted;
+}
+
+// Caesar Cipher decryption
+String decrypt_string(const String *str, int shift) {
+    return encrypt_string(str, 26 - (shift % 26)); // Decryption is just encryption with reverse shift
+}
+
+
+// Function to split a string by a delimiter, returns an array of Strings
+String* split_string(const String *str, char delimiter, size_t *count) {
+    size_t num_substrings = 1; // At least one substring
+    for (size_t i = 0; i < str->length; i++) {
+        if (str->data[i] == delimiter) num_substrings++;
+    }
+
+    String *result = (String *)malloc(num_substrings * sizeof(String));
+    size_t start = 0, idx = 0;
+    
+    for (size_t i = 0; i <= str->length; i++) {
+        if (str->data[i] == delimiter || i == str->length) {
+            size_t substr_len = i - start;
+            result[idx++] = substring(str, start, substr_len);
+            start = i + 1;
+        }
+    }
+    *count = num_substrings;
+    return result;
+}
+
+// Function to reverse a string
+String reverse_string(const String *str) {
+    String reversed;
+    reversed.length = str->length;
+    reversed.data = (char *)malloc(reversed.length + 1);
+    
+    for (size_t i = 0; i < str->length; i++) {
+        reversed.data[i] = str->data[str->length - i - 1];
+    }
+    reversed.data[reversed.length] = '\0';
+    return reversed;
+}
+
+// Function to search for a substring in a string
+size_t search_substring(const String *str, const String *substr) {
+    char *found = strstr(str->data, substr->data);
+    if (found) {
+        return found - str->data; // Return index of found substring
+    }
+    return -1; // Return -1 if not found
+}
+
+// Function to replace all occurrences of a substring within a string with another substring
+String replace_substring(const String *str, const String *target, const String *replacement) {
+    size_t new_length = 0;
+    size_t target_len = target->length;
+    size_t replacement_len = replacement->length;
+    
+    // Calculate the size of the new string
+    const char *pos = str->data;
+    while ((pos = strstr(pos, target->data)) != NULL) {
+        new_length += replacement_len;
+        pos += target_len;
+    }
+    new_length += str->length - (target_len * (new_length / replacement_len));
+    
+    char *new_data = (char *)malloc(new_length + 1);
+    char *dest = new_data;
+    const char *src = str->data;
+    
+    while ((pos = strstr(src, target->data)) != NULL) {
+        size_t len = pos - src;
+        memcpy(dest, src, len);
+        dest += len;
+        memcpy(dest, replacement->data, replacement_len);
+        dest += replacement_len;
+        src = pos + target_len;
+    }
+    strcpy(dest, src); // Copy the rest of the string
+    return (String){new_data, new_length};
+}
+
+// Function to format a string with placeholders
+String format_string(const char *format, ...) {
+    char buffer[1024]; // Static buffer, change to dynamic for larger strings
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    
+    return create_string(buffer); // Return formatted string
+}
+
+
 int main() {
     // Example usage of string functions
     String str1 = create_string("Hello");
